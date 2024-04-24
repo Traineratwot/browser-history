@@ -14,9 +14,6 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install dependencies
-        run: npm install
-
       - name: Extract package version
         id: version
         run: echo "::set-output name=version::$(node -p "require('./package.json').version")"
