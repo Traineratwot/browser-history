@@ -1,7 +1,7 @@
 {
-  "name": "@pinely/chronly-node-browser-history",
+  "name": "@chronly/node-browser-history",
   "version": "1.0.0",
-  "description": "This application aims to retrieve browser history from all browsers on the user's computer. It will attempt to read from some common locations.",
+  "description": "Node.js module for retrieve browser history.",
   "main": "index.js",
   "scripts": {
     "test": "node test.js"
@@ -28,6 +28,8 @@
   ],
   "author": "pinely-international",
   "license": "ISC",
+  "homepage": "https://github.com/pinely-international/chronly-node-browser-history",
+
   "dependencies": {
     "sqlite-async": "github:tance77/sqlite-async",
     "uuid": "^8.1.0"
