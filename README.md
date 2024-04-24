@@ -1,4 +1,4 @@
-# node-browser-history
+# chronly-node-browser-history
 
 This module will gather browser history from common internet browsers. Given a time frame.
 
@@ -11,26 +11,28 @@ This module will gather browser history from common internet browsers. Given a t
 ## Supported browsers
 
 | Browser         | Windows | Mac | Linux |
-| --------------- | ---- | --- | ----- |
-| Google Chrome   | ✅    | ✅  | ✅    |
-| Maxthon         | ❌    | ✅  | ❌     |
+| --------------- | ---- | --- | -----  |
+| Google Chrome   | ✅    | ✅  | ✅     |
+| Mozilla Firefox | ✅    | ✅  | ✅     |
 | Microsoft Edge  | ✅    | ✅  | ❌     |
-| Mozilla Firefox | ✅    | ✅  | ✅    |
-| Opera           | ✅    | ✅  | ❌     |
-| Seamonkey       | ✅    | ✅  | ❌     |
-| Torch           | ✅    | ❌   | ❌     |
-| Vivaldi         | ✅      | ✅  | ❌     |
 | Brave           | ✅    | ✅  | ❌     |
+| Opera           | ✅    | ✅  | ❌     |
+| Safari          | ❌    | ✅  | ❌     |
+| Arc             | ❌    | ✅  | ❌     |
+| Maxthon         | ❌    | ✅  | ❌     |
+| Seamonkey       | ✅    | ✅  | ❌     |
+| Torch           | ✅    | ❌  | ❌     |
+| Vivaldi         | ✅    | ✅  | ❌     |
 | Avast Browser   | ✅    | ✅  | ❌     |
 
 
 # How to Install
 
-> npm install node-browser-history
+> npm install chronly-node-browser-history
 
 **OR**
 
-> yarn install node-browser-history
+> yarn install chronly-node-browser-history
 
 # Notes
 
@@ -39,7 +41,7 @@ This module will gather browser history from common internet browsers. Given a t
 # How to Use
 
 ```javascript
-const BrowserHistory = require('node-browser-history');
+const BrowserHistory = require('chronly-node-browser-history');
 
 
 //Only All Support Browser History
@@ -92,6 +94,14 @@ getChromeHistory(10).then(function (history) {
  * @returns {Promise<array>}
  */
 getOperaHistory(10).then(function (history) {
+  console.log(history);
+});
+/**
+ * Get Arc History
+ * @param historyTimeLength time is in minutes
+ * @returns {Promise<array>}
+ */
+getArcHistory(10).then(function (history) {
   console.log(history);
 });
 

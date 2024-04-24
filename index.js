@@ -30,6 +30,7 @@ async function getBrowserHistory(paths = [], browserName, historyTimeLength) {
             return getMozillaBasedBrowserRecords(paths, browserName, historyTimeLength);
         case browsers.CHROME:
         case browsers.OPERA:
+        case browsers.ARC:
         case browsers.TORCH:
         case browsers.VIVALDI:
         case browsers.BRAVE:
@@ -68,7 +69,7 @@ function copyDbAndWalFile(dbPath, fileExtension = 'sqlite') {
     filePaths.db = newDbPath;
     filePaths.dbWal = `${newDbPath}-wal`;
     fs.copyFileSync(dbPath, filePaths.db);
-    fs.copyFileSync(dbPath, filePaths.dbWal);
+    fs.copyFileSync(dbPath + '-wal', filePaths.dbWal);
     return filePaths;
 }
 
@@ -112,7 +113,6 @@ async function getMozillaBasedBrowserRecords(paths, browserName, historyTimeLeng
     let browserHistory = [];
     for (let i = 0; i < paths.length; i++) {
         const tmpFilePaths = copyDbAndWalFile(paths[i]);
-        console.log(tmpFilePaths)
         newDbPaths.push(tmpFilePaths.db);
         let sql = `SELECT title, datetime(last_visit_date/1000000,'unixepoch') last_visit_time, url from moz_places WHERE DATETIME (last_visit_date/1000000, 'unixepoch')  >= DATETIME('now', '-${historyTimeLength} minutes')  group by title, last_visit_time order by last_visit_time`;
         await forceWalFileDump(tmpFilePaths.db);
@@ -132,7 +132,7 @@ async function getSafariBasedBrowserRecords(paths, browserName, historyTimeLengt
     for (let i = 0; i < paths.length; i++) {
         const tmpFilePaths = copyDbAndWalFile(paths[i]);
         newDbPaths.push(tmpFilePaths.db);
-        let sql = `SELECT i.id, i.url, v.title, v.visit_time as last_visit_time FROM history_items i INNER JOIN history_visits v on i.id = v.history_item WHERE DATETIME (v.visit_time + 978307200, 'unixepoch')  >= DATETIME('now', '-${historyTimeLength} minutes')`;
+       let sql = `SELECT i.id, i.url, v.title, DATETIME(v.visit_time + 978307200, 'unixepoch') as last_visit_time FROM history_items i INNER JOIN history_visits v ON i.id = v.history_item WHERE DATETIME(v.visit_time + 978307200, 'unixepoch') >= DATETIME('now', '-${historyTimeLength} minutes')`;
         await forceWalFileDump(tmpFilePaths.db);
         browserHistory.push(await getHistoryFromDb(tmpFilePaths.db, sql, browserName));
     }
@@ -149,6 +149,17 @@ async function getMaxthonBasedBrowserRecords(paths, browserName, historyTimeLeng
     return browserHistory;
 }
 
+/**
+ * Gets Arc history
+ * @param historyTimeLength time is in minutes
+ * @returns {Promise<array>}
+ */
+async function getArcHistory(historyTimeLength = 5) {
+    browsers.browserDbLocations.arc = browsers.findPaths(browsers.defaultPaths.arc, browsers.ARC);
+    return getBrowserHistory(browsers.browserDbLocations.arc, browsers.ARC, historyTimeLength).then(records => {
+        return records;
+    });
+}
 /**
  * Gets Firefox history
  * @param historyTimeLength time is in minutes
@@ -228,7 +239,6 @@ async function getBraveHistory(historyTimeLength = 5) {
  */
 async function getSafariHistory(historyTimeLength = 5) {
     browsers.browserDbLocations.safari = browsers.findPaths(browsers.defaultPaths.safari, browsers.SAFARI);
-    console.log(browsers.browserDbLocations.safari);
     return getBrowserHistory(browsers.browserDbLocations.safari, browsers.SAFARI, historyTimeLength).then(records => {
         return records;
     });
@@ -295,6 +305,7 @@ async function getAllHistory(historyTimeLength = 5) {
     browsers.browserDbLocations.chrome = browsers.findPaths(browsers.defaultPaths.chrome, browsers.CHROME);
     browsers.browserDbLocations.seamonkey = browsers.findPaths(browsers.defaultPaths.seamonkey, browsers.SEAMONKEY);
     browsers.browserDbLocations.opera = browsers.findPaths(browsers.defaultPaths.opera, browsers.OPERA);
+    browsers.browserDbLocations.arc = browsers.findPaths(browsers.defaultPaths.arc, browsers.ARC);
     browsers.browserDbLocations.torch = browsers.findPaths(browsers.defaultPaths.torch, browsers.TORCH);
     browsers.browserDbLocations.brave = browsers.findPaths(browsers.defaultPaths.brave, browsers.BRAVE);
     browsers.browserDbLocations.safari = browsers.findPaths(browsers.defaultPaths.safari, browsers.SAFARI);
@@ -308,6 +319,7 @@ async function getAllHistory(historyTimeLength = 5) {
     allBrowserRecords = allBrowserRecords.concat(await getBrowserHistory(browsers.browserDbLocations.seamonkey, browsers.SEAMONKEY, historyTimeLength));
     allBrowserRecords = allBrowserRecords.concat(await getBrowserHistory(browsers.browserDbLocations.chrome, browsers.CHROME, historyTimeLength));
     allBrowserRecords = allBrowserRecords.concat(await getBrowserHistory(browsers.browserDbLocations.opera, browsers.OPERA, historyTimeLength));
+    allBrowserRecords = allBrowserRecords.concat(await getBrowserHistory(browsers.browserDbLocations.arc, browsers.ARC, historyTimeLength));
     allBrowserRecords = allBrowserRecords.concat(await getBrowserHistory(browsers.browserDbLocations.torch, browsers.TORCH, historyTimeLength));
     allBrowserRecords = allBrowserRecords.concat(await getBrowserHistory(browsers.browserDbLocations.brave, browsers.BRAVE, historyTimeLength));
     allBrowserRecords = allBrowserRecords.concat(await getBrowserHistory(browsers.browserDbLocations.safari, browsers.SAFARI, historyTimeLength));
@@ -327,6 +339,7 @@ module.exports = {
     getSeaMonkeyHistory,
     getChromeHistory,
     getOperaHistory,
+    getArcHistory,
     getTorchHistory,
     getBraveHistory,
     getSafariHistory,

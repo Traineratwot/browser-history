@@ -1,5 +1,5 @@
 {
-  "name": "node-browser-history",
+  "name": "chronly-node-browser-history",
   "version": "3.0.0",
   "description": "This application aims to retrieve browser history from all browsers on the user's computer. It will attempt to read from some common locations.",
   "main": "index.js",

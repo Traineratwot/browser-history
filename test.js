@@ -23,7 +23,7 @@ function testGetAllHistory() {
 function testGetChromeOnly() {
     console.log("***** RUNNING GET CHROME ONLY *****");
     return new Promise(res => {
-        history.getChromeHistory(180).then(history => {
+        history.getChromeHistory(60).then(history => {
             console.log("PASS GET CHROME ONLY");
             console.log(history);
             res(history);
@@ -34,10 +34,23 @@ function testGetChromeOnly() {
     });
 }
 
+function testArcOnly() {
+    console.log("***** RUNNING GET ARC ONLY *****");
+    return new Promise(res => {
+        history.getArcHistory(60).then(history => {
+            console.log("PASS GET ARC ONLY");
+            console.log(history);
+            res(history);
+        }).catch(error => {
+            console.log("***** FAIL TO GET ARC ONLY *****");
+            return Promise.reject(error);
+        });
+    });
+}
 function testFireFoxOnly() {
     console.log("***** RUNNING GET FIREFOX ONLY *****");
     return new Promise(res => {
-        history.getFirefoxHistory(180).then(history => {
+        history.getFirefoxHistory(60).then(history => {
             console.log("PASS GET FIREFOX ONLY");
             console.log(history);
             res(history);
@@ -65,7 +78,7 @@ function testSafariOnly() {
 function testAvastOnly() {
     console.log("***** RUNNING GET AVAST ONLY *****");
     return new Promise(res => {
-        history.getAvastHistory(180).then(history => {
+        history.getAvastHistory(60).then(history => {
             console.log(history);
             console.log("PASS AVAST ONLY");
             res(history);
@@ -167,7 +180,7 @@ function testTorchOnly() {
 function testBraveOnly() {
     console.log("***** RUNNING GET BRAVE ONLY *****");
     return new Promise(res => {
-        history.getBraveHistory(180).then(history => {
+        history.getBraveHistory(60).then(history => {
             console.log("PASS GET BRAVE ONLY");
             console.log(history);
             res(history);
@@ -181,7 +194,7 @@ function testBraveOnly() {
 function testMicrosoftEdgeOnly() {
     console.log("***** RUNNING GET MICROSOFT EDGE ONLY *****");
     return new Promise(res => {
-        history.getMicrosoftEdge(180).then(history => {
+        history.getMicrosoftEdge(60).then(history => {
             console.log("PASS GET MICROSOFT EDGE ONLY");
             console.log(history);
             res(history);
@@ -197,6 +210,7 @@ let tests = [
     // testGetChromeOnly(),
     // testFireFoxOnly(),
     // testBraveOnly(),
+    // testArcOnly(),
     // testOperaOnly(),
     // testSeaMonkeyOnly(),
     // testMaxthonOnly(),
@@ -212,7 +226,6 @@ Promise.all(tests).then(() => {
     console.log("PASSING ALL TESTS");
     process.exit(0);
 }).catch(error => {
-    console.log('kasjdlasdjlaskdjalskdj')
     console.log(error)
     process.exit(error);
 });

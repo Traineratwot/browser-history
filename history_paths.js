@@ -24,6 +24,7 @@ function setupForMac() {
     defaultPaths.chrome = Path.join(homeDirectory, "Library", "Application Support", "Google", "Chrome");
     defaultPaths.avast = Path.join(homeDirectory, "Library", "Application Support", "AVAST Software", "Browser");
     defaultPaths.firefox = Path.join(homeDirectory, "Library", "Application Support", "Firefox");
+    defaultPaths.arc = Path.join(homeDirectory, "Library", "Application Support", "Arc");
     defaultPaths.edge = Path.join(homeDirectory, "Library", "Application Support", "Microsoft Edge");
     defaultPaths.safari = Path.join(homeDirectory, "Library", "Safari");
     defaultPaths.opera = Path.join(homeDirectory, "Library", "Application Support", "com.operasoftware.Opera");
@@ -50,7 +51,7 @@ function setupDefaultPaths(defaultPaths) {
         case 'win32':
             return setupForWindows(defaultPaths);
         default:
-            console.error(`Platform ${process.platform} is not supported by node-browser-history`);
+            console.error(`Platform ${process.platform} is not supported by chronly-node-browser-history`);
     }
 }
 

@@ -6,6 +6,7 @@ const CHROME = "Google Chrome",
     FIREFOX = "Mozilla Firefox",
     TORCH = "Torch",
     OPERA = "Opera",
+    ARC = "Arc",
     SEAMONKEY = "SeaMonkey",
     VIVALDI = "Vivaldi",
     SAFARI = "Safari",
@@ -18,6 +19,7 @@ let browserDbLocations = {
     chrome: "",
     firefox: "",
     opera: "",
+    arc : "",
     edge: "",
     torch: "",
     seamonkey: "",
@@ -46,21 +48,18 @@ function findFilesInDir(startPath, filter, targetFile, depth = 0) {
     }
     let results = [];
     if (!fs.existsSync(startPath)) {
-        //console.log("no dir ", startPath);
         return results;
     }
     let files = fs.readdirSync(startPath);
     for (let i = 0; i < files.length; i++) {
         let filename = Path.join(startPath, files[i]);
         if (!fs.existsSync(filename)) {
-            // console.log('file doesn\'t exist ', startPath);
             continue;
         }
         let stat = fs.lstatSync(filename);
         if (stat.isDirectory()) {
             results = results.concat(findFilesInDir(filename, filter, targetFile, depth + 1)); //recurse
         } else if(filename.endsWith(targetFile) === true) {
-            // console.log('-- found: ', filename);
             results.push(filename);
         }
         /*
@@ -91,6 +90,7 @@ function findPaths(path, browserName) {
         case CHROME:
         case TORCH:
         case OPERA:
+        case ARC:
         case BRAVE:
         case VIVALDI:
         case EDGE:
@@ -113,6 +113,7 @@ module.exports = {
     FIREFOX,
     TORCH,
     OPERA,
+    ARC,
     SEAMONKEY,
     VIVALDI,
     SAFARI,
