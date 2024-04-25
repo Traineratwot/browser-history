@@ -6,7 +6,7 @@ This module will gather browser history from common internet browsers. Given a t
 
 * Windows
 * Mac
-* Linux (only Firefox and Chrome)
+* Linux 
 
 ## Supported browsers
 
