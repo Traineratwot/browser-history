@@ -43,6 +43,7 @@ let defaultPaths = setupPaths();
  * @return {Array}               Result files with path string in an array
  */
 function findFilesInDir(startPath, filter, targetFile, depth = 0) {
+    try {
     if(depth === 4){
         return [];
     }
@@ -70,7 +71,12 @@ function findFilesInDir(startPath, filter, targetFile, depth = 0) {
             results.push(filename);
         }*/
     }
-    return results;
+    return results;    
+    } catch (error) {
+        console.log('Error in findFilesInDir: ', error);
+        
+    }
+    
 }
 
 

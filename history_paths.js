@@ -37,8 +37,12 @@ function setupForMac() {
 
 function setupForLinux() {
     let defaultPaths = {}
-    defaultPaths.firefox = Path.join(homeDirectory, ".mozilla", "firefox");
+    defaultPaths.firefox = Path.join(homeDirectory, "snap/firefox/common/.mozilla/firefox");
     defaultPaths.chrome = Path.join(homeDirectory, ".config", "google-chrome");
+    defaultPaths.brave = Path.join(homeDirectory, ".config", "BraveSoftware", "Brave-Browser");
+    defaultPaths.opera = Path.join(homeDirectory, ".config", "opera");
+    defaultPaths.edge = Path.join(homeDirectory, ".config", "microsoft-edge");
+
     return defaultPaths
 }
 

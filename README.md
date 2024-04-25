@@ -14,9 +14,9 @@ This module will gather browser history from common internet browsers. Given a t
 | --------------- | ---- | --- | -----  |
 | Google Chrome   | ✅    | ✅  | ✅     |
 | Mozilla Firefox | ✅    | ✅  | ✅     |
-| Microsoft Edge  | ✅    | ✅  | ❌     |
-| Brave           | ✅    | ✅  | ❌     |
-| Opera           | ✅    | ✅  | ❌     |
+| Microsoft Edge  | ✅    | ✅  | ✅     |
+| Brave           | ✅    | ✅  | ✅     |
+| Opera           | ✅    | ✅  | ✅     |
 | Safari          | ❌    | ✅  | ❌     |
 | Arc             | ❌    | ✅  | ❌     |
 | Maxthon         | ❌    | ✅  | ❌     |
