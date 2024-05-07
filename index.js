@@ -51,14 +51,21 @@ async function getBrowserHistory(paths = [], browserName, historyTimeLength) {
 async function getHistoryFromDb(dbPath, sql, browserName) {
     const db = await Database.open(dbPath);
     const rows = await db.all(sql);
-    let browserHistory = rows.map(row => {
-        return {
-            title: row.title,
-            utc_time: row.last_visit_time,
-            url: row.url,
-            browser: browserName,
-        };
-    });
+    let uniqueUrls = new Set(); 
+    let browserHistory = rows.reduce((acc, row) => {
+        if (!uniqueUrls.has(row.url)) {
+            uniqueUrls.add(row.url);
+            acc.push({
+                title: row.title,
+                utc_time: row.last_visit_time,
+                url: row.url,
+                browser: browserName,
+            });
+        }
+        return acc;
+    }, []);
+    
+    
     await db.close();
     return browserHistory;
 }
