@@ -49,25 +49,33 @@ async function getBrowserHistory(paths = [], browserName, historyTimeLength) {
 }
 
 async function getHistoryFromDb(dbPath, sql, browserName) {
-    const db = await Database.open(dbPath);
-    const rows = await db.all(sql);
-    let uniqueUrls = new Set(); 
-    let browserHistory = rows.reduce((acc, row) => {
-        if (!uniqueUrls.has(row.url)) {
-            uniqueUrls.add(row.url);
-            acc.push({
-                title: row.title,
-                utc_time: row.last_visit_time,
-                url: row.url,
-                browser: browserName,
-            });
+    let db;
+    try {
+        db = await Database.open(dbPath);
+        const rows = await db.all(sql);
+        let uniqueUrls = new Set();
+        let browserHistory = rows.reduce((acc, row) => {
+            if (!uniqueUrls.has(row.url)) {
+                uniqueUrls.add(row.url);
+                acc.push({
+                    title: row.title,
+                    utc_time: row.last_visit_time,
+                    url: row.url,
+                    browser: browserName,
+                });
+            }
+            return acc;
+        }, []);
+
+        return browserHistory;
+    } catch (error) {
+        console.error(`Error fetching history from database: ${error.message}`);
+        return [];
+    } finally {
+        if (db) {
+            await db.close();
         }
-        return acc;
-    }, []);
-    
-    
-    await db.close();
-    return browserHistory;
+    }
 }
 
 function copyDbAndWalFile(dbPath, fileExtension = 'sqlite') {
@@ -75,22 +83,50 @@ function copyDbAndWalFile(dbPath, fileExtension = 'sqlite') {
     const filePaths = {};
     filePaths.db = newDbPath;
     filePaths.dbWal = `${newDbPath}-wal`;
-    fs.copyFileSync(dbPath, filePaths.db);
-    fs.copyFileSync(dbPath + '-wal', filePaths.dbWal);
+
+    try {
+        // Check if source files exist
+        if (!fs.existsSync(dbPath)) {
+            throw new Error(`Source database file does not exist: ${dbPath}`);
+        }
+        if (!fs.existsSync(dbPath + '-wal')) {
+            throw new Error(`Source WAL file does not exist: ${dbPath}-wal`);
+        }
+
+        // Attempt to copy files
+        fs.copyFileSync(dbPath, filePaths.db);
+        fs.copyFileSync(dbPath + '-wal', filePaths.dbWal);
+        console.log('Files copied successfully.');
+    } catch (error) {
+        console.error(`Error during file copy: ${error.message}`);
+        // Optionally, you can handle cleanup or additional logging here
+    }
+
     return filePaths;
 }
 
 async function forceWalFileDump(tmpDbPath) {
-    const db = await Database.open(tmpDbPath);
-
-    // If the browser uses a wal file we need to create a wal file with the same filename as our temp database.
-    await db.run("PRAGMA wal_checkpoint(FULL)");
-    await db.close();
+    let db;
+    try {
+        db = await Database.open(tmpDbPath);
+        // If the browser uses a wal file we need to create a wal file with the same filename as our temp database.
+        await db.run("PRAGMA wal_checkpoint(FULL)");
+    } catch (error) {
+        console.error(`Error forcing WAL file dump: ${error.message}`);
+    } finally {
+        if (db) {
+            await db.close();
+        }
+    }
 }
 
 function deleteTempFiles(paths) {
-    paths.forEach(path => {
-        fs.unlinkSync(path);
+    paths.forEach(filePath => {
+        try {
+            fs.unlinkSync(filePath);
+        } catch (error) {
+            console.error(`Error deleting temporary file ${filePath}: ${error.message}`);
+        }
     });
 }
 
@@ -101,12 +137,16 @@ async function getChromeBasedBrowserRecords(paths, browserName, historyTimeLengt
     let newDbPaths = [];
     let browserHistory = [];
     for (let i = 0; i < paths.length; i++) {
-        let newDbPath = path.join(getTempDir(), uuidV4() + ".sqlite");
-        newDbPaths.push(newDbPath);
-        let sql = `SELECT title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')),'unixepoch') last_visit_time, url from urls WHERE DATETIME (last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch')  >= DATETIME('now', '-${historyTimeLength} minutes') group by title, last_visit_time order by last_visit_time`;
-        //Assuming the sqlite file is locked so lets make a copy of it
-        fs.copyFileSync(paths[i], newDbPath);
-        browserHistory.push(await getHistoryFromDb(newDbPath, sql, browserName));
+        try {
+            let newDbPath = path.join(getTempDir(), uuidV4() + ".sqlite");
+            newDbPaths.push(newDbPath);
+            let sql = `SELECT title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')),'unixepoch') last_visit_time, url from urls WHERE DATETIME (last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch')  >= DATETIME('now', '-${historyTimeLength} minutes') group by title, last_visit_time order by last_visit_time`;
+            // Assuming the sqlite file is locked so lets make a copy of it
+            fs.copyFileSync(paths[i], newDbPath);
+            browserHistory.push(await getHistoryFromDb(newDbPath, sql, browserName));
+        } catch (error) {
+            console.error(`Error processing Chrome-based browser record: ${error.message}`);
+        }
     }
     deleteTempFiles(newDbPaths);
     return browserHistory;
@@ -119,15 +159,18 @@ async function getMozillaBasedBrowserRecords(paths, browserName, historyTimeLeng
     let newDbPaths = [];
     let browserHistory = [];
     for (let i = 0; i < paths.length; i++) {
-        const tmpFilePaths = copyDbAndWalFile(paths[i]);
-        newDbPaths.push(tmpFilePaths.db);
-        let sql = `SELECT title, datetime(last_visit_date/1000000,'unixepoch') last_visit_time, url from moz_places WHERE DATETIME (last_visit_date/1000000, 'unixepoch')  >= DATETIME('now', '-${historyTimeLength} minutes')  group by title, last_visit_time order by last_visit_time`;
-        await forceWalFileDump(tmpFilePaths.db);
-        browserHistory.push(await getHistoryFromDb(tmpFilePaths.db, sql, browserName));
+        try {
+            const tmpFilePaths = copyDbAndWalFile(paths[i]);
+            newDbPaths.push(tmpFilePaths.db);
+            let sql = `SELECT title, datetime(last_visit_date/1000000,'unixepoch') last_visit_time, url from moz_places WHERE DATETIME (last_visit_date/1000000, 'unixepoch')  >= DATETIME('now', '-${historyTimeLength} minutes')  group by title, last_visit_time order by last_visit_time`;
+            await forceWalFileDump(tmpFilePaths.db);
+            browserHistory.push(await getHistoryFromDb(tmpFilePaths.db, sql, browserName));
+        } catch (error) {
+            console.error(`Error processing Mozilla-based browser record: ${error.message}`);
+        }
     }
     deleteTempFiles(newDbPaths);
     return browserHistory;
-
 }
 
 async function getSafariBasedBrowserRecords(paths, browserName, historyTimeLength) {
@@ -137,11 +180,15 @@ async function getSafariBasedBrowserRecords(paths, browserName, historyTimeLengt
     let newDbPaths = [];
     let browserHistory = [];
     for (let i = 0; i < paths.length; i++) {
-        const tmpFilePaths = copyDbAndWalFile(paths[i]);
-        newDbPaths.push(tmpFilePaths.db);
-       let sql = `SELECT i.id, i.url, v.title, DATETIME(v.visit_time + 978307200, 'unixepoch') as last_visit_time FROM history_items i INNER JOIN history_visits v ON i.id = v.history_item WHERE DATETIME(v.visit_time + 978307200, 'unixepoch') >= DATETIME('now', '-${historyTimeLength} minutes')`;
-        await forceWalFileDump(tmpFilePaths.db);
-        browserHistory.push(await getHistoryFromDb(tmpFilePaths.db, sql, browserName));
+        try {
+            const tmpFilePaths = copyDbAndWalFile(paths[i]);
+            newDbPaths.push(tmpFilePaths.db);
+            let sql = `SELECT i.id, i.url, v.title, DATETIME(v.visit_time + 978307200, 'unixepoch') as last_visit_time FROM history_items i INNER JOIN history_visits v ON i.id = v.history_item WHERE DATETIME(v.visit_time + 978307200, 'unixepoch') >= DATETIME('now', '-${historyTimeLength} minutes')`;
+            await forceWalFileDump(tmpFilePaths.db);
+            browserHistory.push(await getHistoryFromDb(tmpFilePaths.db, sql, browserName));
+        } catch (error) {
+            console.error(`Error processing Safari-based browser record: ${error.message}`);
+        }
     }
     deleteTempFiles(newDbPaths);
     return browserHistory;
@@ -150,8 +197,12 @@ async function getSafariBasedBrowserRecords(paths, browserName, historyTimeLengt
 async function getMaxthonBasedBrowserRecords(paths, browserName, historyTimeLength) {
     let browserHistory = [];
     for (let i = 0; i < paths.length; i++) {
-        let sql = `SELECT zlastvisittime last_visit_time, zhost host, ztitle title, zurl url FROM zmxhistoryentry WHERE  Datetime (zlastvisittime + 978307200, 'unixepoch') >= Datetime('now', '-${historyTimeLength} minutes')`;
-        browserHistory.push(await getHistoryFromDb(paths[i], sql, browserName));
+        try {
+            let sql = `SELECT zlastvisittime last_visit_time, zhost host, ztitle title, zurl url FROM zmxhistoryentry WHERE Datetime (zlastvisittime + 978307200, 'unixepoch') >= Datetime('now', '-${historyTimeLength} minutes')`;
+            browserHistory.push(await getHistoryFromDb(paths[i], sql, browserName));
+        } catch (error) {
+            console.error(`Error processing Maxthon-based browser record: ${error.message}`);
+        }
     }
     return browserHistory;
 }
