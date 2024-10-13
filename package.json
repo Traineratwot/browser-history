@@ -1,5 +1,5 @@
 {
-  "name": "@chronly/node-browser-history",
+  "name": "browser-history",
   "version": "2.2.0",
   "description": "Node.js module for retrieve browser history.",
   "main": "index.js",
